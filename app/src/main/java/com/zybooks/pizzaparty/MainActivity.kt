@@ -2,13 +2,16 @@ package com.zybooks.pizzaparty
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
+import android.util.Log
 import android.view.View
 import android.widget.EditText
 import android.widget.RadioGroup
 import android.widget.TextView
+import androidx.core.text.set
+import androidx.core.widget.addTextChangedListener
 import kotlin.math.ceil
-
-const val SLICES_PER_PIZZA = 8
 
 class MainActivity : AppCompatActivity() {
 
@@ -17,10 +20,32 @@ class MainActivity : AppCompatActivity() {
     private lateinit var howHungryRadioGroup: RadioGroup
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+//        var isEditMode = false;
+
         setContentView(R.layout.activity_main)
         numAttendEditText = findViewById(R.id.num_attend_edit_text)
         numPizzasTextView = findViewById(R.id.num_pizzas_text_view)
         howHungryRadioGroup = findViewById(R.id.hungry_radio_group)
+
+//        numAttendEditText.addTextChangedListener(object : TextWatcher {
+//            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+//                if(!isEditMode && numAttendEditText.text.isNotEmpty()) {
+//                    numAttendEditText.removeTextChangedListener(this);
+//                    numAttendEditText.setText("");
+//                    numAttendEditText.addTextChangedListener(this);
+//                    isEditMode = true;
+//                }
+//            }
+//
+//            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+//                  numAttendEditText.setText(s?.substring(start, count));
+//            }
+//
+//            override fun afterTextChanged(s: Editable?) {
+//                isEditMode = false;
+//            }
+//        })
     }
 
     /**
@@ -35,17 +60,21 @@ class MainActivity : AppCompatActivity() {
         val numAttendStr = numAttendEditText.text.toString()
 
         /** Convert the text into an integer */
-        val numAttend = numAttendStr.toInt()
+        val numAttend = numAttendStr.toIntOrNull() ?: 0
 
-        /** Determine how many slices on average each person will eat */
-        val slicesPerPerson = when (howHungryRadioGroup.checkedRadioButtonId) {
-            R.id.light_radio_button -> 2
-            R.id.medium_radio_button -> 3
-            else -> 4
+        // Get hunger level selection
+        val hungerLevel = when (howHungryRadioGroup.checkedRadioButtonId) {
+            R.id.light_radio_button -> PizzaCalculator.HungerLevel.LIGHT
+            R.id.medium_radio_button -> PizzaCalculator.HungerLevel.MEDIUM
+            else -> PizzaCalculator.HungerLevel.RAVENOUS
         }
 
-        /** Calculate and show the number of pizzas needed */
-        val totalPizzas = ceil(numAttend * slicesPerPerson / SLICES_PER_PIZZA.toDouble()).toInt()
-        numPizzasTextView.text = "Total pizzas: $totalPizzas"
+        // Get the number of pizzas needed
+        val calc = PizzaCalculator(numAttend, hungerLevel)
+        val totalPizzas = calc.totalPizzas
+
+        // Place totalPizzas into the string resource and display
+        val totalText = getString(R.string.total_pizzas_num, totalPizzas)
+        numPizzasTextView.text = totalText
     }
 }
